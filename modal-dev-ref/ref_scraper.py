@@ -7,7 +7,9 @@ import subprocess
 
 # GitHub API URL for modal-labs repositories
 github_api_url = "https://api.github.com/orgs/modal-labs/repos"
-github_clone_base_url = "https://github.com/modal-labs/"
+
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Authentication token for GitHub API (if required)
 # It's best practice to use environment variables for such sensitive information.
@@ -19,13 +21,15 @@ headers = {}
 
 # Clone or update repositories from modal-labs
 def clone_or_update_repos():
+    repos_dir = os.path.join(script_dir, 'repos')
+    
     response = requests.get(github_api_url)
     
     if response.status_code == 200:
         repos = response.json()
         for repo in repos:
             repo_name = repo['name']
-            repo_dir = f"repos/{repo_name}"
+            repo_dir = os.path.join(repos_dir, repo_name)
             
             # Check if the repository directory already exists
             if os.path.exists(repo_dir):
@@ -46,14 +50,17 @@ def scrape_modal_docs():
         'https://modal.com/docs/reference'
     ]
 
-    if not os.path.exists('doc'):
-        os.mkdir('doc')
+    docs_dir = os.path.join(script_dir, 'docs')
+
+    if not os.path.exists(docs_dir):
+        os.mkdir(docs_dir)
 
     for doc_url in doc_urls:
         doc_category = doc_url.split('/')[-1]
+        category_dir = os.path.join(docs_dir, doc_category)
         
-        if not os.path.exists(f'doc/{doc_category}'):
-            os.mkdir(f'doc/{doc_category}')
+        if not os.path.exists(category_dir):
+            os.mkdir(category_dir)
         
         page = requests.get(doc_url)
         soup = BeautifulSoup(page.content, 'html.parser')
@@ -77,8 +84,9 @@ def scrape_modal_docs():
                     markdown_content = converter.handle(str(article))
                     
                     file_name = link.split('/')[-1] + '.md'
+                    file_path = os.path.join(category_dir, file_name)
                     
-                    with open(f'docs/{doc_category}/{file_name}', 'w', encoding='utf-8') as file:
+                    with open(file_path, 'w', encoding='utf-8') as file:
                         file.write(markdown_content)
                 
                     print(f"Saved: {file_name}")
@@ -87,9 +95,10 @@ def scrape_modal_docs():
         else:
             print("No sidebar found.")
             
-# Ensure the cloned_repos directory exists
-if not os.path.exists('repos'):
-    os.mkdir('repos')
+# Ensure the directories for cloned repos and docs exist within script's directory
+repos_dir = os.path.join(script_dir, 'repos')
+if not os.path.exists(repos_dir):
+    os.mkdir(repos_dir)
 
 clone_or_update_repos()  # Clone all repositories
 scrape_modal_docs()  # Scrape documentation
