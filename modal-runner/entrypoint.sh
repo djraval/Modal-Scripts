@@ -1,22 +1,20 @@
 #!/bin/bash
 
+# Configure Doppler with the provided environment variables
+doppler configure set project "$DOPPLER_PROJECT"
+doppler configure set config "$DOPPLER_CONFIG"
+
 # Select token based on input
 TOKEN_SET="${1}"
 
-# Read token from config file
-if [ ! -f /config.ini ]; then
-    echo "Config file not found"
+# Use Doppler to get the tokens
+TOKEN_ID=$(doppler secrets get MODAL_${TOKEN_SET}_ID --plain)
+TOKEN_SECRET=$(doppler secrets get MODAL_${TOKEN_SET}_SECRET --plain)
+
+if [ -z "$TOKEN_ID" ] || [ -z "$TOKEN_SECRET" ]; then
+    echo "Invalid token set name or tokens not found in Doppler"
     exit 1
 fi
-
-TOKEN_LINE=$(grep "^$TOKEN_SET =" /config.ini)
-if [ -z "$TOKEN_LINE" ]; then
-    echo "Invalid token set name"
-    exit 1
-fi
-
-TOKEN_ID=$(echo $TOKEN_LINE | cut -d'=' -f2 | cut -d',' -f1 | tr -d ' ')
-TOKEN_SECRET=$(echo $TOKEN_LINE | cut -d'=' -f2 | cut -d',' -f2 | tr -d ' ')
 
 # Set Modal token
 modal token set --token-id "${TOKEN_ID}" --token-secret "${TOKEN_SECRET}"

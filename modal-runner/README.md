@@ -1,12 +1,11 @@
 # Modal Runner
 
-This directory contains the necessary files to run Modal commands using Docker.
+This directory contains the necessary files to run Modal commands using Docker with Doppler integration for secure secret management.
 
 ## Files
 
-- `Dockerfile`: Defines the Docker image for running Modal commands.
-- `entrypoint.sh`: The entry point script for the Docker container.
-- `config.ini`: Configuration file for storing tokens and other secrets (not tracked by git).
+- `Dockerfile`: Defines the Docker image for running Modal commands with Doppler CLI.
+- `entrypoint.sh`: The entry point script for the Docker container, using Doppler to fetch secrets.
 - `run-modal.sh`: Bash script to build the Docker image and run Modal commands.
 - `run-modal.ps1`: PowerShell script to build the Docker image and run Modal commands.
 
@@ -23,7 +22,7 @@ Options:
 
 Example:
 ```bash
-./run-modal.sh -r djraval shell --gpu='t4' --cmd="nvidia-smi"
+./run-modal.sh -r 1 shell --gpu='t4' --cmd="nvidia-smi"
 ```
 
 ### Using PowerShell (Windows)
@@ -37,32 +36,36 @@ Options:
 
 Example:
 ```powershell
-.\run-modal.ps1 -Rebuild djraval shell --gpu='t4' --cmd="nvidia-smi"
+.\run-modal.ps1 -Rebuild 1 shell --gpu='t4' --cmd="nvidia-smi"
 ```
 
 ## Configuration
 
 Before using the scripts, make sure to:
 
-1. Create a `config.ini` file in this directory with your Modal tokens:
-
-```ini
-[tokens]
-token_set_name1 = token_id1,token_secret1
-token_set_name2 = token_id2,token_secret2
-```
-
-2. Ensure the `config.ini` file is added to your `.gitignore` to prevent accidental commits of sensitive information.
+1. Install and set up Doppler CLI on your local machine.
+2. Configure your Doppler project and environment:
+   ```bash
+   doppler setup
+   ```
+3. Add your Modal tokens to Doppler:
+   ```bash
+   doppler secrets set MODAL_1_ID="your_modal_1_id"
+   doppler secrets set MODAL_1_SECRET="your_modal_1_secret"
+   doppler secrets set MODAL_2_ID="your_modal_2_id"
+   doppler secrets set MODAL_2_SECRET="your_modal_2_secret"
+   # Add more as needed
+   ```
 
 ## Notes
 
 - The scripts will automatically build the Docker image if it doesn't exist.
 - Use the `-r` or `-Rebuild` flag to force a rebuild of the Docker image when you've made changes to the Dockerfile or entrypoint.sh.
 - The current directory is mounted as a volume in the Docker container, allowing access to your local files.
-
+- Doppler is used to securely manage and retrieve Modal tokens.
 
 Remember to make the `run-modal.sh` script executable:
 
-``` bash
+```bash
 chmod +x run-modal.sh
 ```
