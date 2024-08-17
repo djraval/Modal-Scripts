@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Disable Python output buffering
+export PYTHONUNBUFFERED=1
+
 # Configure Doppler with the provided environment variables
 doppler configure set project "$DOPPLER_PROJECT"
 doppler configure set config "$DOPPLER_CONFIG"
@@ -21,8 +24,16 @@ modal token set --token-id "${TOKEN_ID}" --token-secret "${TOKEN_SECRET}"
 
 # Check if the command is 'shell'
 if [ "${2}" = "shell" ]; then
-    # For 'shell' command, use 'exec' to replace the current process
-    exec modal "${@:2}"
+    # Check if --cmd argument is provided
+    if [[ "$*" == *"--cmd"* ]]; then
+        # Extract the command after --cmd
+        cmd=$(echo "$*" | sed -n 's/.*--cmd=\([^ ]*\).*/\1/p')
+        # Run the shell command and exit
+        modal "${@:2}" --cmd="$cmd && exit"
+    else
+        # For 'shell' command without --cmd, use 'exec' to replace the current process
+        exec modal "${@:2}"
+    fi
 else
     # For other commands, run as before
     modal "${@:2}"

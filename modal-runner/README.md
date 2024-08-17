@@ -6,15 +6,12 @@ This directory contains the necessary files to run Modal commands using Docker w
 
 - `Dockerfile`: Defines the Docker image for running Modal commands with Doppler CLI.
 - `entrypoint.sh`: The entry point script for the Docker container, using Doppler to fetch secrets.
-- `run-modal.sh`: Bash script to build the Docker image and run Modal commands.
-- `run-modal.ps1`: PowerShell script to build the Docker image and run Modal commands.
+- `run_modal.py`: Python script to build the Docker image and run Modal commands.
 
 ## Usage
 
-### Using Bash (Linux/macOS)
-
 ```bash
-./run-modal.sh [-r|--rebuild] <token_set> <modal_args...>
+python run_modal.py [-r|--rebuild] <token_set> <modal_args...>
 ```
 
 Options:
@@ -22,26 +19,12 @@ Options:
 
 Example:
 ```bash
-./run-modal.sh -r 1 shell --gpu='t4' --cmd="nvidia-smi"
-```
-
-### Using PowerShell (Windows)
-
-```powershell
-.\run-modal.ps1 [-Rebuild] <TokenSet> <ModalArgs...>
-```
-
-Options:
-- `-Rebuild`: Rebuild the Docker image before running (optional)
-
-Example:
-```powershell
-.\run-modal.ps1 -Rebuild 1 shell --gpu='t4' --cmd="nvidia-smi"
+python run_modal.py -r 1 shell --gpu='t4' --cmd="nvidia-smi"
 ```
 
 ## Configuration
 
-Before using the scripts, make sure to:
+Before using the script, make sure to:
 
 1. Install and set up Doppler CLI on your local machine.
 2. Configure your Doppler project and environment:
@@ -59,13 +42,7 @@ Before using the scripts, make sure to:
 
 ## Notes
 
-- The scripts will automatically build the Docker image if it doesn't exist.
-- Use the `-r` or `-Rebuild` flag to force a rebuild of the Docker image when you've made changes to the Dockerfile or entrypoint.sh.
+- The script will automatically build the Docker image if it doesn't exist.
+- Use the `-r` flag to force a rebuild of the Docker image when you've made changes to the Dockerfile or entrypoint.sh.
 - The current directory is mounted as a volume in the Docker container, allowing access to your local files.
 - Doppler is used to securely manage and retrieve Modal tokens.
-
-Remember to make the `run-modal.sh` script executable:
-
-```bash
-chmod +x run-modal.sh
-```
