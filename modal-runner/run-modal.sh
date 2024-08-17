@@ -4,40 +4,7 @@
 usage() {
     echo "Usage: $0 [-r|--rebuild] <token_set> <modal_args...>"
     echo "  -r, --rebuild    Rebuild the Docker image before running"
-    echo "  You will be prompted to select a username."
     exit 1
-}
-
-get_username_selection() {
-    local usernames=()
-    local i=1
-    while true; do
-        username=$(doppler secrets get MODAL_${i}_USERNAME --plain 2>/dev/null)
-        if [ -z "$username" ]; then
-            break
-        fi
-        usernames+=("$username")
-        i=$((i+1))
-    done
-
-    if [ ${#usernames[@]} -eq 0 ]; then
-        echo "No usernames found in Doppler secrets."
-        exit 1
-    fi
-
-    echo "Select a username:"
-    select username in "${usernames[@]}"; do
-        if [ -n "$username" ]; then
-            for i in "${!usernames[@]}"; do
-                if [[ "${usernames[$i]}" = "${username}" ]]; then
-                    echo "$i"
-                    return
-                fi
-            done
-        else
-            echo "Invalid selection. Please try again."
-        fi
-    done
 }
 
 # Parse arguments
