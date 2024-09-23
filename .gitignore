@@ -1,5 +1,7 @@
 scripts/__pycache__
 .vscode
 scratch
-# modal-dev-ref/docs
-# modal-dev-ref/repos
+modal-dev-ref/docs
+modal-dev-ref/repos
+venv
+tmp
