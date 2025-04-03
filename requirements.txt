@@ -2,3 +2,4 @@ beautifulsoup4
 requests
 html2text
 modal
+uv

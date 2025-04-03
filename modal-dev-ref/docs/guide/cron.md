@@ -1,0 +1,102 @@
+# Scheduling remote cron jobs
+
+A common requirement is to perform some task at a given time every day or week
+automatically. Modal facilitates this through function schedules.
+
+## Basic scheduling
+
+Let’s say we have a Python module `heavy.py` with a function,
+`perform_heavy_computation()`.
+
+    
+    
+    # heavy.py
+    def perform_heavy_computation():
+        ...
+    
+    if __name__ == "__main__":
+        perform_heavy_computation()
+
+Copy
+
+To schedule this function to run once per day, we create a Modal App and
+attach our function to it with the `@app.function` decorator and a schedule
+parameter:
+
+    
+    
+    # heavy.py
+    import modal
+    
+    app = modal.App()
+    
+    @app.function(schedule=modal.Period(days=1))
+    def perform_heavy_computation():
+        ...
+
+Copy
+
+To activate the schedule, deploy your app, either through the CLI:
+
+    
+    
+    modal deploy --name daily_heavy heavy.py
+
+Copy
+
+Or programmatically:
+
+    
+    
+    if __name__ == "__main__":
+        modal.runner.deploy_app(app)
+
+Copy
+
+When you make changes to your function, just rerun the deploy command to
+overwrite the old deployment.
+
+Note that when you redeploy your function, `modal.Period` resets, and the
+schedule will run X hours after this most recent deployment.
+
+If you want to run your function at a regular schedule not disturbed by
+deploys, `modal.Cron` (see below) is a better option.
+
+## Monitoring your scheduled runs
+
+To see past execution logs for the scheduled function, go to the Apps section
+on the Modal web site.
+
+Schedules currently cannot be paused. Instead the schedule should be removed
+and the app redeployed. Schedules can be started manually on the app’s
+dashboard page, using the “run now” button.
+
+## Schedule types
+
+There are two kinds of base schedule values - `modal.Period` and `modal.Cron`.
+
+`modal.Period` lets you specify an interval between function calls, e.g.
+`Period(days=1)` or `Period(hours=5)`:
+
+    
+    
+    # runs once every 5 hours
+    @app.function(schedule=modal.Period(hours=5))
+    def perform_heavy_computation():
+        ...
+
+Copy
+
+`modal.Cron` gives you finer control using cron syntax:
+
+    
+    
+    # runs at 8 am (UTC) every Monday
+    @app.function(schedule=modal.Cron("0 8 * * 1"))
+    def perform_heavy_computation():
+        ...
+
+Copy
+
+For more details, see the API reference for Period, Cron and Function
+
