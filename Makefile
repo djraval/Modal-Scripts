@@ -1,6 +1,6 @@
 .PHONY: setup scrape clean
 
-VENV_DIR := venv
+VENV_DIR := .venv
 REQUIREMENTS := requirements.txt
 SCRAPER_SCRIPT := modal-dev-ref/ref_scraper.py
 

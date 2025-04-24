@@ -1,5 +1,5 @@
 scripts/__pycache__
 .vscode
 scratch
-venv
+.venv
 tmp
