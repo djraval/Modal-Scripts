@@ -34,13 +34,13 @@ Each individual job is called a **Sandbox** and can be created using the
 
 Copy
 
+**Note:** you can run the above example as a script directly with `python
+my_script.py`. `modal run` is not needed here since there is no entrypoint.
+
 Sandboxes require an `App` to be passed when spawned from outside of a Modal
 container. You may pass in a regular `App` object or look one up by name with
 `App.lookup`. The `create_if_missing` flag on `App.lookup` will create an
 `App` with the given name if it doesn’t exist.
-
-Unlike normal Apps which are invoked with `modal run`, Sandbox scripts can be
-run like normal Python e.g. `python sandbox_example.py`.
 
 ## Running a Sandbox with an entrypoint
 

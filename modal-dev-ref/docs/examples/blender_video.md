@@ -54,7 +54,9 @@ and we’ll use a global flag in the code to switch between the two.
 
     
     
-    WITH_GPU = True  # try changing this to False to run rendering massively in parallel on CPUs!
+    WITH_GPU = (
+        True  # try changing this to False to run rendering massively in parallel on CPUs!
+    )
 
 Copy
 
@@ -130,9 +132,7 @@ and then activate the GPU.
     
         # report rendering devices -- a nice snippet for debugging and ensuring the accelerators are being used
         for dev in cycles.preferences.devices:
-            print(
-                f"ID:{dev['id']} Name:{dev['name']} Type:{dev['type']} Use:{dev['use']}"
-            )
+            print(f"ID:{dev['id']} Name:{dev['name']} Type:{dev['type']} Use:{dev['use']}")
 
 Copy
 
@@ -145,9 +145,7 @@ video.
 
     
     
-    combination_image = modal.Image.debian_slim(python_version="3.11").apt_install(
-        "ffmpeg"
-    )
+    combination_image = modal.Image.debian_slim(python_version="3.11").apt_install("ffmpeg")
 
 Copy
 
@@ -211,9 +209,7 @@ latency of about one minute.
     
         input_path = Path(__file__).parent / "IceModal.blend"
         blend_bytes = input_path.read_bytes()
-        args = [
-            (blend_bytes, frame) for frame in range(1, frame_count + 1, frame_skip)
-        ]
+        args = [(blend_bytes, frame) for frame in range(1, frame_count + 1, frame_skip)]
         images = list(render.starmap(args))
         for i, image in enumerate(images):
             frame_path = output_directory / f"frame_{i + 1}.png"

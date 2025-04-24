@@ -497,6 +497,7 @@ dependencies. For including local python source files see
         secrets: Sequence[_Secret] = [],
         gpu: GPU_T = None,
         context_mount: Optional[_Mount] = None,  # Deprecated: the context is now inferred
+        context_dir: Optional[Union[Path, str]] = None,  # Context for relative COPY commands
         force_build: bool = False,  # Ignore cached builds, similar to 'docker build --no-cache'
         ignore: Union[Sequence[str], Callable[[Path], bool]] = AUTO_DOCKERIGNORE,
     ) -> "_Image":
@@ -640,7 +641,7 @@ Install a list of additional packages using micromamba.
 
 Copy
 
-Build a Modal image from a public or private image registry, such as Docker
+Build a Modal Image from a public or private image registry, such as Docker
 Hub.
 
 The image must be built for the `linux/amd64` platform.
@@ -775,6 +776,7 @@ Copy
         # Ignore cached builds, similar to 'docker build --no-cache'
         force_build: bool = False,
         *,
+        context_dir: Optional[Union[Path, str]] = None,  # Context for relative COPY commands
         secrets: Sequence[_Secret] = [],
         gpu: GPU_T = None,
         add_python: Optional[str] = None,

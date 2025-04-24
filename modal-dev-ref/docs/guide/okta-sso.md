@@ -60,11 +60,11 @@ enabling.
 
 The following SAML attributes are used by the integration:
 
-Name | Value  
+Name| Value  
 ---|---  
-email | user.email  
-firstName | user.firstName  
-lastName | user.lastName  
+email| user.email  
+firstName| user.firstName  
+lastName| user.lastName  
   
 ## SP-initiated SSO
 

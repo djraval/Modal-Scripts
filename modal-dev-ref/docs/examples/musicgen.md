@@ -71,9 +71,7 @@ So we add a Modal Volume to store the weights in the cloud.
     
     
     cache_dir = "/cache"
-    model_cache = modal.Volume.from_name(
-        "audiocraft-model-cache", create_if_missing=True
-    )
+    model_cache = modal.Volume.from_name("audiocraft-model-cache", create_if_missing=True)
 
 Copy
 
@@ -160,9 +158,7 @@ There are also a few bits to make this work well with Modal:
     
                 # generate next segment
                 generated_duration = (
-                    segment_duration
-                    if context is None
-                    else (segment_duration - overlap)
+                    segment_duration if context is None else (segment_duration - overlap)
                 )
                 print(f"🎼 generating {generated_duration} seconds of music")
                 self.model.set_generation_params(duration=segment_duration)
@@ -272,8 +268,8 @@ Share the URL with your friends and they can generate their own songs!
         # so we limit the number of concurrent containers to 1
         # and allow it to scale to 1000 concurrent inputs
         max_containers=1,
-        allow_concurrent_inputs=1000,
     )
+    @modal.concurrent(max_inputs=1000)
     @modal.asgi_app()
     def ui():
         import gradio as gr
@@ -289,12 +285,8 @@ Share the URL with your friends and they can generate their own songs!
     
         temp_dir = Path("/dev/shm")
     
-        async def generate_music(
-            prompt: str, duration: int = 10, format: str = "wav"
-        ):
-            audio_bytes = await generate.aio(
-                prompt, duration=duration, format=format
-            )
+        async def generate_music(prompt: str, duration: int = 10, format: str = "wav"):
+            audio_bytes = await generate.aio(prompt, duration=duration, format=format)
     
             audio_path = temp_dir / f"{uuid4()}.{format}"
             audio_path.write_bytes(audio_bytes)

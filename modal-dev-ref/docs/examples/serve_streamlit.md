@@ -58,9 +58,8 @@ subprocess using `subprocess.Popen`. We also expose port 8000 using the
 
     
     
-    @app.function(
-        allow_concurrent_inputs=100,
-    )
+    @app.function()
+    @modal.concurrent(max_inputs=100)
     @modal.web_server(8000)
     def run():
         target = shlex.quote(streamlit_script_remote_path)

@@ -48,9 +48,7 @@ API, create a MultiOn API Key and store it as a Modal sEcret on the dashboard
 
     
     
-    @app.function(
-        image=multion_image, secrets=[modal.Secret.from_name("MULTION_API_KEY")]
-    )
+    @app.function(image=multion_image, secrets=[modal.Secret.from_name("MULTION_API_KEY")])
     def news_tweet_agent():
         # Import MultiOn
         import multion

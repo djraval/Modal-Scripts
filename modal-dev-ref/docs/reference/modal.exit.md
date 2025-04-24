@@ -2,7 +2,7 @@
 
     
     
-    def exit(_warn_parentheses_missing=None) -> Callable[[ExitHandlerType], _PartialFunction]:
+    def exit(_warn_parentheses_missing=None) -> Callable[[NullaryMethod], _PartialFunction]:
 
 Copy
 

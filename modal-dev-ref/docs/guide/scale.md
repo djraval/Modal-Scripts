@@ -1,7 +1,45 @@
 # Scaling out
 
-Modal has a few different tools that helps with increasing performance of your
-applications.
+Modal makes it trivially easy to scale compute across thousands of containers.
+You won’t have to worry about your App crashing if it goes viral or need to
+wait a long time for your batch jobs to complete.
+
+For the the most part, scaling out will happen automatically, and you won’t
+need to think about it. But it can be helpful to understand how Modal’s
+autoscaler works and how you can control its behavior when you need finer
+control.
+
+## How does autoscaling work on Modal?
+
+Every Modal Function corresponds to an autoscaling pool of containers. The
+size of the pool is managed by Modal’s autoscaler. The autoscaler will spin up
+new containers when there is no capacity available for new inputs, and it will
+spin down containers when resources are idling. By default, Modal Functions
+will scale to zero when there are no inputs to process.
+
+Autoscaling decisions are made quickly and frequently so that your batch jobs
+can ramp up fast and your deployed Apps can respond to any sudden changes in
+traffic.
+
+## Configuring autoscaling behavior
+
+Modal exposes a few settings that allow you to configure the autoscaler’s
+behavior. These settings can be passed to the `@app.function` or `@app.cls`
+decorators:
+
+  * `max_containers`: The upper limit on containers for the specific Function.
+  * `min_containers`: The minimum number of containers that should be kept warm, even when the Function is inactive.
+  * `buffer_containers`: The size of the buffer to maintain while the Function is active, so that additional inputs will not need to queue for a new container.
+  * `scaledown_window`: The maximum duration (in seconds) that individual containers can remain idle when scaling down.
+
+In general, these settings allow you to trade off cost and latency.
+Maintaining a larger warm pool or idle buffer will increase costs but reduce
+the chance that inputs will need to wait for a new container to start.
+
+Similarly, a longer scaledown window will let containers idle for longer,
+which might help avoid unnecessary churn for Apps that receive regular but
+infrequent inputs. Note that containers may not wait for the entire scaledown
+window before shutting down if the App is substantially overprovisioned.
 
 ## Parallel execution of inputs
 
@@ -10,7 +48,7 @@ independent inputs (e.g., a grid search), the easiest way to increase
 performance is to run those function calls in parallel using Modal’s
 `Function.map()` method.
 
-Here is an example if we had a function evaluate_model that takes a single
+Here is an example if we had a function `evaluate_model` that takes a single
 argument:
 
     
@@ -116,23 +154,6 @@ more information about asynchronous usage.
 
 Sometimes you can speed up your applications by utilizing GPU acceleration.
 See the gpu section for more information.
-
-## Limiting concurrency
-
-If you want to limit concurrency, you can use the `max_containers` argument to
-to `app.function`. For instance:
-
-    
-    
-    app = modal.App()
-    
-    @app.function(max_containers=5)
-    def f(x):
-        print(x)
-
-Copy
-
-With this, Modal will spin up at most 5 containers at any point.
 
 ## Scaling Limits
 

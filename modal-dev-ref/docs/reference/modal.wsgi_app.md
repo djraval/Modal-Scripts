@@ -8,7 +8,7 @@
         label: Optional[str] = None,  # Label for created endpoint. Final subdomain will be <workspace>--<label>.modal.run.
         custom_domains: Optional[Iterable[str]] = None,  # Deploy this endpoint on a custom domain.
         requires_proxy_auth: bool = False,  # Require Modal-Key and Modal-Secret HTTP Headers on requests.
-    ) -> Callable[[Callable[..., Any]], _PartialFunction]:
+    ) -> Callable[[Union[_PartialFunction, NullaryFuncOrMethod]], _PartialFunction]:
 
 Copy
 

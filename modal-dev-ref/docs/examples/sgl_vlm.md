@@ -134,9 +134,9 @@ endpoint, so it can be accessed over the public Internet from any client.
         gpu=GPU_CONFIG,
         timeout=20 * MINUTES,
         scaledown_window=20 * MINUTES,
-        allow_concurrent_inputs=100,
         image=vlm_image,
     )
+    @modal.concurrent(max_inputs=100)
     class Model:
         @modal.enter()  # what should a container do after it starts but before it gets input?
         def start_runtime(self):
@@ -149,8 +149,8 @@ endpoint, so it can be accessed over the public Internet from any client.
                 tp_size=GPU_COUNT,  # t_ensor p_arallel size, number of GPUs to split the model over
                 log_level=SGL_LOG_LEVEL,
             )
-            self.runtime.endpoint.chat_template = (
-                sgl.lang.chat_template.get_chat_template(MODEL_CHAT_TEMPLATE)
+            self.runtime.endpoint.chat_template = sgl.lang.chat_template.get_chat_template(
+                MODEL_CHAT_TEMPLATE
             )
             sgl.set_default_backend(self.runtime)
     
@@ -167,7 +167,9 @@ endpoint, so it can be accessed over the public Internet from any client.
     
             image_url = request.get("image_url")
             if image_url is None:
-                image_url = "https://modal-public-assets.s3.amazonaws.com/golden-gate-bridge.jpg"
+                image_url = (
+                    "https://modal-public-assets.s3.amazonaws.com/golden-gate-bridge.jpg"
+                )
     
             response = requests.get(image_url)
             response.raise_for_status()
@@ -189,9 +191,7 @@ endpoint, so it can be accessed over the public Internet from any client.
                 image_path=image_path, question=question, max_new_tokens=128
             )
             # show the question, image, and response in the terminal for demonstration purposes
-            print(
-                Colors.BOLD, Colors.GRAY, "Question: ", question, Colors.END, sep=""
-            )
+            print(Colors.BOLD, Colors.GRAY, "Question: ", question, Colors.END, sep="")
             terminal_image = from_file(image_path)
             terminal_image.draw()
             answer = state["answer"]

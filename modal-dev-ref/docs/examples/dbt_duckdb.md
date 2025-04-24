@@ -243,7 +243,8 @@ these docs on Modal. Just define a simple FastAPI app:
 
     
     
-    @app.function(volumes={TARGET_PATH: dbt_target}, allow_concurrent_inputs=100)
+    @app.function(volumes={TARGET_PATH: dbt_target})
+    @modal.concurrent(max_inputs=100)
     @modal.asgi_app()  # wrap a function that returns a FastAPI app in this decorator to host on Modal
     def serve_dbt_docs():
         import fastapi
@@ -272,8 +273,8 @@ And deploy that app to Modal with
 
 Copy
 
-If you navigate to the output URL, you should see something like  ![example
-dbt docs](/_app/immutable/assets/dbt_docs.BwfMuDI8.png)
+If you navigate to the output URL, you should see something like ![example dbt
+docs](/_app/immutable/assets/dbt_docs.BwfMuDI8.png)
 
 You can also check out our instance of the docs here. The app will be served
 “serverlessly” — it will automatically scale up or down during periods of

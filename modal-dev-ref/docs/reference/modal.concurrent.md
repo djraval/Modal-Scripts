@@ -7,7 +7,10 @@
         *,
         max_inputs: int,  # Hard limit on each container's input concurrency
         target_inputs: Optional[int] = None,  # Input concurrency that Modal's autoscaler should target
-    ) -> Callable[[Union[Callable[..., Any], _PartialFunction]], _PartialFunction]:
+    ) -> Callable[
+        [Union[Callable[P, ReturnType], _PartialFunction[P, ReturnType, ReturnType]]],
+        _PartialFunction[P, ReturnType, ReturnType],
+    ]:
 
 Copy
 
@@ -52,4 +55,7 @@ input queuing.
             ...
 
 Copy
+
+_Added in v0.73.148:_ This decorator replaces the `allow_concurrent_inputs`
+parameter in `@app.function()` and `@app.cls()`.
 

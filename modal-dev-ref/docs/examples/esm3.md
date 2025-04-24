@@ -40,9 +40,7 @@ sequence data.
 
     
     
-    volume = modal.Volume.from_name(
-        "example-esm3-dashboard", create_if_missing=True
-    )
+    volume = modal.Volume.from_name("example-esm3-dashboard", create_if_missing=True)
     VOLUME_PATH = Path("/vol")
     MODELS_PATH = VOLUME_PATH / "models"
     DATA_PATH = VOLUME_PATH / "data"
@@ -86,9 +84,7 @@ guide.
     
     web_app_image = (
         modal.Image.debian_slim(python_version="3.11")
-        .pip_install(
-            "gradio~=4.44.0", "biotite==0.41.2", "fastapi[standard]==0.115.4"
-        )
+        .pip_install("gradio~=4.44.0", "biotite==0.41.2", "fastapi[standard]==0.115.4")
         .add_local_dir(Path(__file__).parent / "frontend", remote_path="/assets")
     )
 
@@ -239,10 +235,10 @@ Modal app dashboard for this app.
     
     @app.function(
         image=web_app_image,
-        max_containers=1,  # Gradio requires sticky sessions
-        allow_concurrent_inputs=1000,  # but can handle many async inputs
         volumes={VOLUME_PATH: volume},
+        max_containers=1,  # Gradio requires sticky sessions
     )
+    @modal.concurrent(max_inputs=1000)  # Gradio can handle many async inputs
     @modal.asgi_app()
     def ui():
         import gradio as gr
@@ -268,9 +264,7 @@ Modal app dashboard for this app.
     
         title = "Predict & Visualize Protein Structures"
     
-        with gr.Blocks(
-            theme=theme, css=css, title=title, js=always_dark()
-        ) as interface:
+        with gr.Blocks(theme=theme, css=css, title=title, js=always_dark()) as interface:
             gr.Markdown(f"# {title}")
     
             with gr.Row():
@@ -284,9 +278,7 @@ Modal app dashboard for this app.
                         "Retrieve Sequence from UniProt ID", variant="primary"
                     )
     
-                    uniprot_link_button = gr.Button(
-                        value="View protein on UniProt website"
-                    )
+                    uniprot_link_button = gr.Button(value="View protein on UniProt website")
                     uniprot_link_button.click(
                         fn=None,
                         inputs=uniprot_num_box,
@@ -304,9 +296,7 @@ Modal app dashboard for this app.
                     with gr.Row():
                         half_len = int(len(example_uniprots) / 2)
                         with gr.Column():
-                            for i, uniprot in enumerate(
-                                example_uniprots[:half_len]
-                            ):
+                            for i, uniprot in enumerate(example_uniprots[:half_len]):
                                 btn = gr.Button(uniprot, variant="secondary")
                                 btn.click(
                                     fn=lambda j=i: extract_uniprot_num(j),
@@ -314,14 +304,10 @@ Modal app dashboard for this app.
                                 )
     
                         with gr.Column():
-                            for i, uniprot in enumerate(
-                                example_uniprots[half_len:]
-                            ):
+                            for i, uniprot in enumerate(example_uniprots[half_len:]):
                                 btn = gr.Button(uniprot, variant="secondary")
                                 btn.click(
-                                    fn=lambda j=i + half_len: extract_uniprot_num(
-                                        j
-                                    ),
+                                    fn=lambda j=i + half_len: extract_uniprot_num(j),
                                     outputs=uniprot_num_box,
                                 )
     
@@ -339,9 +325,7 @@ Modal app dashboard for this app.
             gr.Markdown("## ESM3 Predicted Structure")
             molstar_html = gr.HTML()
     
-            run_esm_button.click(
-                fn=run_esm, inputs=sequence_box, outputs=molstar_html
-            )
+            run_esm_button.click(fn=run_esm, inputs=sequence_box, outputs=molstar_html)
     
         # return a FastAPI app for Modal to serve
         return mount_gradio_app(app=web_app, blocks=interface, path="/")

@@ -88,9 +88,7 @@ code! — by pointing the Hugging Face cache at a Modal Volume.
     
     model_volume = modal.Volume.from_name("hf-hub-cache", create_if_missing=True)
     
-    MODEL_PATH = (
-        "/models"  # where the Volume will appear on our Functions' filesystems
-    )
+    MODEL_PATH = "/models"  # where the Volume will appear on our Functions' filesystems
     
     image = image.env(
         {
@@ -333,10 +331,8 @@ no requests.
     )
     
     
-    @app.function(
-        image=web_image,
-        allow_concurrent_inputs=1000,
-    )
+    @app.function(image=web_image)
+    @modal.concurrent(max_inputs=1000)
     @modal.asgi_app()
     def ui():
         import fastapi.staticfiles

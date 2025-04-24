@@ -49,9 +49,7 @@ function call, which we then use to poll for its result.
     
     @web_app.post("/parse")
     async def parse(request: fastapi.Request):
-        parse_receipt = modal.Function.from_name(
-            "example-doc-ocr-jobs", "parse_receipt"
-        )
+        parse_receipt = modal.Function.from_name("example-doc-ocr-jobs", "parse_receipt")
     
         form = await request.form()
         receipt = await form["receipt"].read()  # type: ignore
@@ -107,9 +105,7 @@ at our root path.
     @app.function(image=image)
     @modal.asgi_app()
     def wrapper():
-        web_app.mount(
-            "/", fastapi.staticfiles.StaticFiles(directory="/assets", html=True)
-        )
+        web_app.mount("/", fastapi.staticfiles.StaticFiles(directory="/assets", html=True))
         return web_app
 
 Copy

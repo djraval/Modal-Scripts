@@ -155,9 +155,7 @@ with the key `OPENWEATHER_API_KEY` containing our API key for OpenWeatherMap.
     @app.function(
         image=requests_image,
         secrets=[
-            modal.Secret.from_name(
-                "weather-secret", required_keys=["OPENWEATHER_API_KEY"]
-            )
+            modal.Secret.from_name("weather-secret", required_keys=["OPENWEATHER_API_KEY"])
         ],
     )
     def city_weather(city):
@@ -254,9 +252,7 @@ just created:
     @app.function(
         image=pygsheets_image,
         secrets=[
-            modal.Secret.from_name(
-                "gsheets-secret", required_keys=["SERVICE_ACCOUNT_JSON"]
-            )
+            modal.Secret.from_name("gsheets-secret", required_keys=["SERVICE_ACCOUNT_JSON"])
         ],
     )
     def update_sheet_report(rows):

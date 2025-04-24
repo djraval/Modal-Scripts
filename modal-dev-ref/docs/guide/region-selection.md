@@ -15,10 +15,10 @@ and outputs go through Modal’s control plane in us-east-1.
 A multiplier on top of our base usage pricing will be applied to any function
 that has a cloud region defined.
 
-**Region** | **Multiplier**  
+**Region**| **Multiplier**  
 ---|---  
-Any region in US/EU/AP | 1.25x  
-All other regions | 2.5x  
+Any region in US/EU/AP| 1.25x  
+All other regions| 2.5x  
   
 Here’s an example: let’s say you have a function that uses 1 T4, 1 CPU core,
 and 1GB memory. You’ve specified that the function should run in `us-east-2`.

@@ -6,7 +6,7 @@
         _warn_parentheses_missing=None,
         *,
         snap: bool = False,
-    ) -> Callable[[Union[Callable[[Any], Any], _PartialFunction]], _PartialFunction]:
+    ) -> Callable[[Union[_PartialFunction, NullaryMethod]], _PartialFunction]:
 
 Copy
 

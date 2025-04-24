@@ -34,7 +34,7 @@ components we deploy on our network.
 
   * Modal uses logging and metrics observability providers, including Datadog and Sentry.io.
   * Compute jobs at Modal are containerized and virtualized using gVisor, the sandboxing technology developed at Google and used in their _Google Cloud Run_ and _Google Kubernetes Engine_ cloud services.
-  * We conduct annual business continuity and security incident exercises. 
+  * We conduct annual business continuity and security incident exercises.
 
 ## Vulnerability remediation
 
@@ -117,12 +117,11 @@ participate, please send a report of the vulnerability to security@modal.com.
 Modal will never access or use:
 
   * your source code.
-  * the inputs or outputs to your Modal Functions.
+  * the inputs (function arguments) or outputs (function return values) to your Modal Functions.
   * any data you store in Modal, such as in Images or Volumes.
 
-Input and output data for a function are deleted from our system once the
-output has been retrieved. If the output has not been retrieved after a max
-TTL of 24 hours the input and output are deleted automatically.
+Inputs (function arguments) and outputs (function return values) are deleted
+from our system after a max TTL of 7 days.
 
 App logs and metadata are stored on Modal. Modal will not access this data
 unless permission is granted by the user to help with troubleshooting.

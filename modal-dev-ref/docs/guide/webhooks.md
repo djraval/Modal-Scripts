@@ -200,7 +200,8 @@ returns a reference to your web app:
     
     image = modal.Image.debian_slim().pip_install("fastapi[standard]")
     
-    @app.function(image=image, allow_concurrent_inputs=1000)
+    @app.function(image=image)
+    @modal.concurrent(max_inputs=1000)
     @modal.asgi_app()
     def fastapi_app():
         from fastapi import FastAPI, Request
@@ -220,7 +221,7 @@ Copy
 Now, as before, when you deploy this script as a Modal App, you get a URL for
 your app that you can hit:
 
-The `allow_concurrent_inputs` argument enables a single container to process
+The `@modal.concurrent` decorator enables a single container to process
 multiple inputs at once, taking advantage of the asynchronous event loops in
 ASGI applications. See this guide for details.
 
@@ -233,7 +234,8 @@ You can serve WSGI apps using the `@modal.wsgi_app` decorator:
     image = modal.Image.debian_slim().pip_install("flask")
     
     
-    @app.function(image=image, allow_concurrent_inputs=1000)
+    @app.function(image=image)
+    @modal.concurrent(max_inputs=1000)
     @modal.wsgi_app()
     def flask_app():
         from flask import Flask, request
@@ -251,9 +253,8 @@ Copy
 
 See Flask’s docs for more information on using Flask as a WSGI app.
 
-The `allow_concurrent_inputs` argument enables a single container to process
-multiple inputs at once, each on a separate thread. See this guide for
-details.
+Because WSGI apps are synchronous, concurrent inputs will be run on separate
+threads. See this guide for details.
 
 ## Non-ASGI web servers
 
@@ -267,7 +268,8 @@ port on the container:
 
     
     
-    @app.function(allow_concurrent_inputs=1000)
+    @app.function()
+    @modal.concurrent(max_inputs=1000)
     @modal.web_server(8000)
     def my_file_server():
         import subprocess
@@ -297,7 +299,8 @@ values of the parameters will create a distinct auto-scaling container pool.
 
     
     
-    @app.cls(allow_concurrent_inputs=1000)
+    @app.cls()
+    @modal.concurrent(max_inputs=1000)
     class Server:
         root: str = modal.parameter(default=".")
     
@@ -342,10 +345,10 @@ will experience a “cold start”. Consult the guide page on cold start
 performance for more information on when Functions will cold start and advice
 how to mitigate the impact.
 
-If your Function has `allow_concurrent_inputs` set, multiple requests to the
-same endpoint may be handled by the same container. Beyond this limit,
-additional containers will start up to scale your App horizontally. When you
-reach the Function’s limit on containers, requests will queue for handling.
+If your Function uses `@modal.concurrent`, multiple requests to the same
+endpoint may be handled by the same container. Beyond this limit, additional
+containers will start up to scale your App horizontally. When you reach the
+Function’s limit on containers, requests will queue for handling.
 
 Each workspace on Modal has a rate limit on total operations. For a new
 account, this is set to 200 function inputs or web endpoint requests per
@@ -406,7 +409,7 @@ Copy
 This assumes you have a Modal Secret named `my-web-auth-token` created, with
 contents `{AUTH_TOKEN: secret-random-token}`. Now, your endpoint will return a
 401 status code except when you hit it with the correct `Authorization` header
-set (note that you have to prefix the token with `Bearer `):
+set (note that you have to prefix the token with `Bearer`):
 
     
     

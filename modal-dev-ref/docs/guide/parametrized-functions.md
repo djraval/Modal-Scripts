@@ -58,24 +58,8 @@ Some things to note:
 
   * The total size of the arguments is limited to 16 KiB.
   * Modal classes can still annotate types of regular class attributes, which are independent of parametrization, by either omitting `= modal.parameter()` or using `= modal.parameter(init=False)` to satisfy type checkers.
-  * Only `int` and `str` types for parameters are supported. Support for other types will be added in the future. If you need to pass a different type of argument, you can use the legacy method of specifying parameters, via `__init__` and optional type hints:
-
-    
-    
-    @app.cls()
-    class MyClass:
-    
-        def __init__(self, foo, bar: float = 10.3) -> None:
-            self.foo = foo
-            self.bar = bar
-    
-        @modal.method()
-        def baz(self, qux: str = "default") -> str:
-            ...
-
-Copy
-
-This legacy method will not work with parametrized web endpoints.
+  * The support types are these primitives: `str`, `int`, `bool`, and `bytes`.
+  * The legacy `__init__` constructor method is being removed, see the 1.0 migration for details.
 
 ## Looking up a parametrized function
 

@@ -10,7 +10,10 @@
         custom_domains: Optional[Iterable[str]] = None,  # Custom fully-qualified domain name (FQDN) for the endpoint.
         docs: bool = False,  # Whether to enable interactive documentation for this endpoint at /docs.
         requires_proxy_auth: bool = False,  # Require Modal-Key and Modal-Secret HTTP Headers on requests.
-    ) -> Callable[[Callable[P, ReturnType]], _PartialFunction[P, ReturnType, ReturnType]]:
+    ) -> Callable[
+        [Union[_PartialFunction[P, ReturnType, ReturnType], Callable[P, ReturnType]]],
+        _PartialFunction[P, ReturnType, ReturnType],
+    ]:
 
 Copy
 

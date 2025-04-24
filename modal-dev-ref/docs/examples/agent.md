@@ -33,12 +33,8 @@ use the provided templates for OpenAI and LangSmith.
         "example-code-langchain",
         image=image,
         secrets=[
-            modal.Secret.from_name(
-                "openai-secret", required_keys=["OPENAI_API_KEY"]
-            ),
-            modal.Secret.from_name(
-                "langsmith-secret", required_keys=["LANGCHAIN_API_KEY"]
-            ),
+            modal.Secret.from_name("openai-secret", required_keys=["OPENAI_API_KEY"]),
+            modal.Secret.from_name("langsmith-secret", required_keys=["LANGCHAIN_API_KEY"]),
         ],
     )
 
@@ -56,9 +52,7 @@ a Sandbox with the necessary dependencies.
     def create_sandbox(app) -> modal.Sandbox:
         # Change this image (and the retrieval logic in the retrieval module)
         # if you want the agent to give coding advice on other libraries!
-        agent_image = modal.Image.debian_slim(
-            python_version=PYTHON_VERSION
-        ).pip_install(
+        agent_image = modal.Image.debian_slim(python_version=PYTHON_VERSION).pip_install(
             "torch==2.5.0",
             "transformers==4.46.0",
         )

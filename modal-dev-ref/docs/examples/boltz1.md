@@ -56,9 +56,7 @@ To learn how it works, read on!
     
     
     @app.local_entrypoint()
-    def main(
-        force_download: bool = False, input_yaml_path: str = None, args: str = ""
-    ):
+    def main(force_download: bool = False, input_yaml_path: str = None, args: str = ""):
         print("🧬 loading model remotely")
         download_model.remote(force_download)
     
@@ -112,9 +110,7 @@ the weights in this case, see the Addenda.
 
     
     
-    boltz_model_volume = modal.Volume.from_name(
-        "boltz1-models", create_if_missing=True
-    )
+    boltz_model_volume = modal.Volume.from_name("boltz1-models", create_if_missing=True)
     models_dir = Path("/models/boltz1")
 
 Copy
@@ -139,9 +135,7 @@ for any protein molecules. See the Addenda for details.
         timeout=10 * MINUTES,
         gpu="H100",
     )
-    def boltz1_inference(
-        boltz_input_yaml: str, msas: list["MSA"], args=""
-    ) -> bytes:
+    def boltz1_inference(boltz_input_yaml: str, msas: list["MSA"], args="") -> bytes:
         import shlex
         import subprocess
     
@@ -160,9 +154,7 @@ for any protein molecules. See the Addenda for details.
         )
     
         print("🧬 packaging up outputs")
-        output_bytes = package_outputs(
-            f"boltz_results_{input_path.with_suffix('').name}"
-        )
+        output_bytes = package_outputs(f"boltz_results_{input_path.with_suffix('').name}")
     
         return output_bytes
 

@@ -46,8 +46,8 @@ will be accepted as valid authentication.
 Previously, Modal Proxy Auth tokens used the verified the `Proxy-
 Authorization` header, returning a 407 Proxy Unauthorized HTTP error in case
 the token isn’t valid. We have since made an update to use `Modal-Key` and
-`Modal-Secret` instead. `Proxy-Authorization` is still supported but will be
-deprecated sometime in the future.
+`Modal-Secret` instead. `Proxy-Authorization` is deprecated, and users are
+advised to stop using it.
 
 The `Proxy-Authorization` header uses the `Basic` authentication scheme and
 expect base64 encoding of `[TOKEN_ID]:[TOKEN_SECRET]` for the credentials. For

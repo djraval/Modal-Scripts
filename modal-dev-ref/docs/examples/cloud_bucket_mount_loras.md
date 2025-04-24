@@ -309,9 +309,9 @@ serve` instead to see changes live.
         # gradio requires sticky sessions
         # so we limit the number of concurrent containers to 1
         # and allow it to scale to 100 concurrent inputs
-        allow_concurrent_inputs=100,
         max_containers=1,
     )
+    @modal.concurrent(max_inputs=100)
     @modal.asgi_app()
     def ui():
         """A simple Gradio interface around our LoRA inference."""
@@ -324,8 +324,7 @@ serve` instead to see changes live.
     
         # determine which loras are available
         lora_ids = [
-            f"{lora_dir.parent.stem}/{lora_dir.stem}"
-            for lora_dir in LORAS_PATH.glob("*/*")
+            f"{lora_dir.parent.stem}/{lora_dir.stem}" for lora_dir in LORAS_PATH.glob("*/*")
         ]
     
         # pick one to be default, set a default prompt
@@ -353,9 +352,7 @@ serve` instead to see changes live.
         iface = gr.Interface(
             go,
             inputs=[  # the inputs to go/our inference function
-                gr.Dropdown(
-                    choices=lora_ids, value=default_lora_id, label="👉 LoRA ID"
-                ),
+                gr.Dropdown(choices=lora_ids, value=default_lora_id, label="👉 LoRA ID"),
                 gr.Textbox(default_prompt, label="🎨 Prompt"),
                 gr.Number(value=8888, label="🎲 Random Seed"),
             ],

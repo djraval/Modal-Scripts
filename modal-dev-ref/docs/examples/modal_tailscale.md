@@ -55,9 +55,7 @@ and ephemeral key.
     
     @app.function(
         secrets=[
-            modal.Secret.from_name(
-                "tailscale-auth", required_keys=["TAILSCALE_AUTHKEY"]
-            ),
+            modal.Secret.from_name("tailscale-auth", required_keys=["TAILSCALE_AUTHKEY"]),
             modal.Secret.from_dict(
                 {
                     "ALL_PROXY": "socks5://localhost:1080/",

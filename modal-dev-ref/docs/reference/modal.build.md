@@ -4,7 +4,7 @@
     
     def build(
         _warn_parentheses_missing=None, *, force: bool = False, timeout: int = 86400
-    ) -> Callable[[Union[Callable[[Any], Any], _PartialFunction]], _PartialFunction]:
+    ) -> Callable[[Union[_PartialFunction, NullaryMethod]], _PartialFunction]:
 
 Copy
 

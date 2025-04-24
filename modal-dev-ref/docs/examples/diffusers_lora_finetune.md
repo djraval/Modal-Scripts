@@ -84,9 +84,7 @@ flexible — see the docs for more details.
 
     
     
-    GIT_SHA = (
-        "e649678bf55aeaa4b60bd1f68b1ee726278c0304"  # specify the commit to fetch
-    )
+    GIT_SHA = "e649678bf55aeaa4b60bd1f68b1ee726278c0304"  # specify the commit to fetch
     
     image = (
         image.apt_install("git")
@@ -304,11 +302,7 @@ your subject, you might need to increase `max_train_steps`.
         timeout=1800,  # 30 minutes
         secrets=[huggingface_secret]
         + (
-            [
-                modal.Secret.from_name(
-                    "wandb-secret", required_keys=["WANDB_API_KEY"]
-                )
-            ]
+            [modal.Secret.from_name("wandb-secret", required_keys=["WANDB_API_KEY"])]
             if USE_WANDB
             else []
         ),
@@ -468,8 +462,8 @@ to run while you’re not using it.
     @app.function(
         image=web_image,
         max_containers=1,
-        allow_concurrent_inputs=1000,
     )
+    @modal.concurrent(max_inputs=1000)
     @modal.asgi_app()
     def fastapi_app():
         import gradio as gr

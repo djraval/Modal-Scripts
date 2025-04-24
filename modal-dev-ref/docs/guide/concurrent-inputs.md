@@ -1,89 +1,180 @@
-# Concurrent inputs on a single container (beta)
+# Input concurrency
 
-This guide explores why and how to configure containers to process multiple
-inputs simultaneously.
+As traffic to your application increases, Modal will automatically scale up
+the number of containers running your Function:
 
-## Default parallelism
+By default, each container will be assigned one input at a time. Autoscaling
+across containers allows your Function to process inputs in parallel. This is
+ideal when the operations performed by your Function are CPU-bound.
 
-Modal offers beautifully simple parallelism: when there is a large backlog of
-inputs enqueued, the number of containers scales up automatically. This is the
-ideal source of parallelism in the majority of cases.
+For some workloads, though, it is inefficient for containers to process inputs
+one-by-one. Modal supports these workloads with its _input concurrency_
+feature, which allows individual containers to process multiple inputs at the
+same time:
 
-## When to use concurrent inputs
+When used effectively, input concurrency can reduce latency and lower costs.
 
-There are, however, a few cases where it is ideal to run multiple inputs on
-each container _concurrently_.
+## Use cases
 
-One use case is hosting web applications where the endpoints are not CPU-bound
-- for example, making an asynchronous request to a deployed Modal function or
-querying a database. Only a handful of containers can handle hundreds of
-simultaneous requests for such applications if you allow concurrent inputs.
+Input concurrency can be especially effective for workloads that are primarily
+I/O-bound, e.g.:
 
-Another use case is to support continuous batching on GPU-accelerated
-containers. Frameworks such as vLLM allow us to push higher token throughputs
-by maximizing compute in each forward pass. In LLMs, this means each GPU step
-can generate tokens for multiple user queries; in diffusion models, you can
-denoise multiple images concurrently. In order to take full advantage of this,
-containers need to be processing multiple inputs concurrently.
+  * Querying a database
+  * Making external API requests
+  * Making remote calls to other Modal Functions
 
-## Configuring concurrent inputs within a container
+For such workloads, individual containers may be able to concurrently process
+large numbers of inputs with minimal additional latency. This means that your
+Modal application will be more efficient overall, as it won’t need to scale
+containers up and down as traffic ebbs and flows.
 
-To configure functions to allow each individual container to process `n`
-inputs concurrently, set `allow_concurrent_inputs=n` on the function
-decorator.
+Another use case is to leverage _continuous batching_ on GPU-accelerated
+containers. Frameworks such as vLLM can achieve the benefits of batching
+across multiple inputs even when those inputs do not arrive simultaneously
+(because new batches are formed for each forward pass of the model).
 
-The Modal container will execute concurrent inputs on separate threads if the
-function is synchronous. You must ensure that **the function implementation is
-thread-safe.**
+Note that for CPU-bound workloads, input concurrency will likely not be as
+effective (or will even be counterproductive), and you may want to use Modal’s
+_dynamic batching_ feature instead.
 
-On the other hand, if the function is asynchronous, the Modal container will
-execute the concurrent inputs on separate `asyncio` tasks, using a single
-thread. Allowing concurrent inputs inside an `async` function does not require
-the function to be thread-safe.
+## Enabling input concurrency
+
+To enable input concurrency, add the `@modal.concurrent` decorator:
 
     
     
-    # Each container executes up to 10 inputs in separate threads
-    @app.function(allow_concurrent_inputs=10)
+    @app.function()
+    @modal.concurrent(max_inputs=100)
+    def my_function(input: str):
+        ...
+
+Copy
+
+When using the class pattern, the decorator should be applied at the level of
+the _class_ , not on individual methods:
+
+    
+    
+    @app.cls()
+    @modal.concurrent(max_inputs=100)
+    class MyCls:
+    
+        @modal.method()
+        def my_method(self, input: str):
+            ...
+
+Copy
+
+Because all methods on a class will be served by the same containers, a class
+with input concurrency enabled will concurrently run distinct methods in
+addition to multiple inputs for the same method.
+
+**Note:** The `@modal.concurrent` decorator was added in v0.73.148 of the
+Modal Python SDK. Input concurrency could previously be enabled by setting the
+`allow_concurrent_inputs` parameter on the `@app.function` decorator.
+
+## Setting a concurrency target
+
+When using the `@modal.concurrent` decorator, you must always configure the
+maximum number of inputs that each container will concurrently process. If
+demand exceeds this limit, Modal will automatically scale up more containers.
+
+Additional inputs may need to queue up while these additional containers cold
+start. To help avoid degraded latency during scaleup, the `@modal.concurrent`
+decorator has a separate `target_inputs` parameter. When set, Modal’s
+autoscaler will aim for this target as it provisions resources. If demand
+increases faster than new containers can spin up, the active containers will
+be allowed to burst above the target up to the `max_inputs` limit:
+
+    
+    
+    @app.function()
+    @modal.concurrent(max_inputs=120, target_inputs=100)  # Allow a 20% burst
+    def my_function(input: str):
+        ...
+
+Copy
+
+It may take some experimentation to find the right settings for these
+parameters in your particular application. Our suggestion is to set the
+`target_inputs` based on your desired latency and the `max_inputs` based on
+resource constraints (i.e., to avoid GPU OOM). You may also consider the
+relative latency cost of scaling up a new container versus overloading the
+existing containers.
+
+## Concurrency mechanisms
+
+Modal uses different concurrency mechanisms to execute your Function depending
+on whether it is defined as synchronous or asynchronous. Each mechanism
+imposes certain requirements on the Function implementation. Input concurrency
+is an advanced feature, and it’s important to make sure that your
+implementation complies with these requirements to avoid unexpected behavior.
+
+For synchronous Functions, Modal will execute concurrent inputs on separate
+threads. _This means that the Function implementation must be thread-safe._
+
+    
+    
+    # Each container can execute up to 10 inputs in separate threads
+    @app.function()
+    @modal.concurrent(max_inputs=10)
     def sleep_sync():
         # Function must be thread-safe
         time.sleep(1)
+
+Copy
+
+For asynchronous Functions, Modal will execute concurrent inputs using
+separate `asyncio` tasks on a single thread. This does not require thread
+safety, but it does mean that the Function needs to participate in
+collaborative multitasking (i.e., it should not block the event loop).
+
     
-    # Each container executes up to 10 inputs in separate async tasks
-    @app.function(allow_concurrent_inputs=10)
+    
+    # Each container can execute up to 10 inputs with separate async tasks
+    @app.function()
+    @modal.concurrent(max_inputs=10)
     async def sleep_async():
+        # Function must not block the event loop
         await asyncio.sleep(1)
 
 Copy
 
-This is an advanced feature, and you should make sure that your function
-satisfies the requirements outlined before proceeding with concurrent inputs.
+## Gotchas
 
-## How does autoscaling work on Modal?
+Input concurrency is a powerful feature, but there are a few caveats that can
+be useful to be aware of before adopting it.
 
-To recap, there are three different scaling parameters you can set on each
-function:
+### Input cancellations
 
-  * **`max_containers`** controls the maximum number of containers (default: None).
-  * **`min_containers`** controls the number of “warm” containers that should be kept running, even during periods of reduced traffic (default: 0).
-  * **`allow_concurrent_inputs`** sets the capacity of _a single container_ to handle some number of simultaneous inputs (default: 1).
+Synchronous and asynchronous Functions handle input cancellations differently.
+Modal will raise a `modal.exception.InputCancellation` exception in
+synchronous Functions and an `asyncio.CancelledError` in asynchronous
+Functions.
 
-Modal uses these three parameters, as well as traffic and your
-`scaledown_window`, to determine when to create new runners or decommission
-old ones. This is done on a per-function basis. Each Modal function gets its
-own, independently scaling pool of runners.
+When using input concurrency with a synchronous Function, a single input
+cancellation will terminate the entire container. If your workflow depends on
+graceful input cancellations, we recommend using an asynchronous
+implementation.
 
-A new container is created when the _number of inputs_ exceeds the _total
-capacity_ of all running containers. This means that there are inputs waiting
-to be processed. Containers are removed when they are no longer serving
-traffic. For example:
+### Concurrent logging
 
-  1. You have a text generation endpoint with `allow_concurrent_inputs=20`, and there are 100 inputs enqueued.
-  2. Modal will scale up to 5 containers to handle the load, and each container will process 20 inputs concurrently. There are now 100 inputs running.
-  3. If another input comes in, there will now be 1 enqueued input and 100 running inputs. Modal will create a new container.
-  4. If the traffic drops, Modal will decommission containers as they become idle.
-  5. Once all inputs are processed, the containers will be terminated.
+The separate threads or tasks that are executing the concurrent inputs will
+write any logs to the same stream. This makes it difficult to associate logs
+with a specific input, and filtering for a specific function call in Modal’s
+web dashboard will show logs for all inputs running at the same time.
 
-Our automatic scaling is fine-grained, and containers are spawned immediately
-after an input is received that exceeds the current runners’ capacity.
+To work around this, we recommend including a unique identifier in the
+messages you log (either your own identifier or the
+`modal.current_input_id()`) so that you can use the search functionality to
+surface logs for a specific input:
+
+    
+    
+    @app.function()
+    @modal.concurrent(max_inputs=10)
+    async def better_concurrent_logging(x: int):
+        logger.info(f"{modal.current_input_id()}: Starting work with {x}")
+
+Copy
 

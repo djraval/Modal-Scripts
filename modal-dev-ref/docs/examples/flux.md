@@ -115,21 +115,17 @@ Next, we map the model’s setup and inference code onto Modal.
         scaledown_window=20 * MINUTES,
         timeout=60 * MINUTES,  # leave plenty of time for compilation
         volumes={  # add Volumes to store serializable compilation artifacts, see section on torch.compile below
-            "/cache": modal.Volume.from_name(
-                "hf-hub-cache", create_if_missing=True
-            ),
+            "/cache": modal.Volume.from_name("hf-hub-cache", create_if_missing=True),
             "/root/.nv": modal.Volume.from_name("nv-cache", create_if_missing=True),
-            "/root/.triton": modal.Volume.from_name(
-                "triton-cache", create_if_missing=True
-            ),
+            "/root/.triton": modal.Volume.from_name("triton-cache", create_if_missing=True),
             "/root/.inductor-cache": modal.Volume.from_name(
                 "inductor-cache", create_if_missing=True
             ),
         },
     )
     class Model:
-        compile: int = (  # see section on torch.compile below for details
-            modal.parameter(default=0)
+        compile: bool = (  # see section on torch.compile below for details
+            modal.parameter(default=False)
         )
     
         @modal.enter()
@@ -137,7 +133,7 @@ Next, we map the model’s setup and inference code onto Modal.
             pipe = FluxPipeline.from_pretrained(
                 f"black-forest-labs/FLUX.1-{VARIANT}", torch_dtype=torch.bfloat16
             ).to("cuda")  # move model to GPU
-            self.pipe = optimize(pipe, compile=bool(self.compile))
+            self.pipe = optimize(pipe, compile=self.compile)
     
         @modal.method()
         def inference(self, prompt: str) -> bytes:
@@ -185,12 +181,12 @@ inference is after cold start. In our tests, clients received images in about
         compile: bool = False,
     ):
         t0 = time.time()
-        image_bytes = Model(compile=int(compile)).inference.remote(prompt)
+        image_bytes = Model(compile=compile).inference.remote(prompt)
         print(f"🎨 first inference latency: {time.time() - t0:.2f} seconds")
     
         if twice:
             t0 = time.time()
-            image_bytes = Model(compile=int(compile)).inference.remote(prompt)
+            image_bytes = Model(compile=compile).inference.remote(prompt)
             print(f"🎨 second inference latency: {time.time() - t0:.2f} seconds")
     
         output_path = Path("/tmp") / "flux" / "output.jpg"

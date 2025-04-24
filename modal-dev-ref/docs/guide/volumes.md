@@ -108,9 +108,9 @@ Unlike a normal filesystem, you need to explicitly reload the Volume to see
 changes made since it was first mounted. This reload is handled by invoking
 the `.reload()` method on a Volume object. Similarly, any Volume changes made
 within a container need to be committed for those the changes to become
-visible outside the current container. This is handled by invoking the
-`.commit()` method on a `modal.Volume` object or by enabling background
-commits.
+visible outside the current container. This is handled periodically by
+background commits and directly by invoking the `.commit()` method on a
+`modal.Volume` object.
 
 At container creation time the latest state of an attached Volume is mounted.
 If the Volume is then subsequently modified by a commit operation in another

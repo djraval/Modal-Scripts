@@ -17,6 +17,69 @@ the client.
 
 ## Latest
 
+### 0.74.18 (2025-04-23)
+
+  * Adds a `.deploy()` method to the `App` object. This method allows you programmatically deploy Apps from Python:
+    
+        app = modal.App("programmatic-deploy")
+    ...
+    app.deploy()
+
+Copy
+
+### 0.74.12 (2025-04-18)
+
+  * The `@app.function` and `@app.cls` decorators now support `experimental_options`, which we’ll use going forward when testing experimental functionality that depends only on server-side configuration.
+
+### 0.74.7 (2025-04-17)
+
+  * Modal will now raise an error if local files included in the App are modified during the build process. This behavior can be controlled with the `MODAL_BUILD_VALIDATION` configuration, which accepts `error` (default), `warning`, or `ignore`.
+
+### 0.74.6 (2025-04-17)
+
+  * Internal change that makes containers for functions/classes with `serialized=True` start up _slightly_ faster than before
+
+### 0.74.0 (2025-04-15)
+
+  * Introduces a deprecation warning when using explicit constructors (`__init__` methods) on `@modal.cls`-decorated classes. Class parameterization should instead be done via dataclass-style `modal.parameter()` declarations. Initialization logic should run in `@modal.enter()`-decorated lifecycle methods.
+
+### 0.73.173 (2025-04-15)
+
+  * Fix bug where containers hang with batch sizes above 100 (with `@modal.batched`).
+  * Fix bug where containers can fail with large outputs and batch sizes above 49 (with `@modal.batched`)
+
+### 0.73.170 (2025-04-14)
+
+  * Fixes a bug where `modal run` didn’t recognize `modal.parameter()` class parameters
+
+### 0.73.165 (2025-04-11)
+
+  * Allow running new ephemeral apps from **within** Modal containers using `with app.run(): ...`. Use with care, as putting such a run block in global scope of a module could easily lead to infinite app creation recursion
+
+### 0.73.160 (2025-04-10)
+
+  * The `allow_concurrent_inputs` parameter of `@app.function` and `@app.cls` is now deprecated in favor of the `@modal.concurrent` decorator. See the Modal 1.0 Migration Guide and documentation on input concurrency for more information.
+
+### 0.73.159 (2025-04-10)
+
+  * Fixes a bug where `serialized=True` classes could not `self.` reference other methods on the class, or use `modal.parameter()` synthetic constructors
+
+### 0.73.158 (2025-04-10)
+
+  * Adds support for `bool` type to class parameters using `name: bool = modal.parameter()`. Note that older clients can’t instantiate classes with bool parameters unless those have default values which are not modified. Bool parameters are also not supported by web endpoints at this time.
+
+### 0.73.148 (2025-04-07)
+
+  * Fixes a bug introduced in 0.73.147 that broke App builds when using `@modal.batched` on a class method.
+
+### 0.73.147 (2025-04-07)
+
+  * Improved handling of cases where `@modal.concurrent` is stacked with other decorators.
+
+### 0.73.144 (2025-04-04)
+
+  * Adds a `context_dir` parameter to `modal.Image.from_dockerfile` and `modal.Image.dockerfile_commands`. This parameter can be used to provide a local reference for relative COPY commands.
+
 ### 0.73.139 (2025-04-02)
 
   * Added `modal.experimental.ipython` module, which can be loaded in Jupyter notebooks with `%load_ext modal.experimental.ipython`. Currently it provides the `%modal` line magic for looking up functions:

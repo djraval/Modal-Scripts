@@ -239,7 +239,7 @@ Example:
 
 Copy
 
-If applied to a `stub.function`, `map()` returns one result per input and the
+If applied to a `app.function`, `map()` returns one result per input and the
 output order is guaranteed to be the same as the input order. Set
 `order_outputs=False` to return results in the order that they are completed
 instead.

@@ -48,14 +48,15 @@ Shark Attack API and the Corporate Bullshit Generator. We convert the response
 into a Markdown-formatted message.
 
 We turn our Python function into a Modal Function by attaching the
-`app.function` decorator. We make the function `async` and set
-`allow_concurrent_inputs` to a large value because communicating with an
-external API is a classic case for better performance from asynchronous
-execution. Modal handles things like the async event loop for us.
+`app.function` decorator. We make the function `async` and add
+`@modal.concurrent()` with a large `max_inputs` value, because communicating
+with an external API is a classic case for better performance from
+asynchronous execution. Modal handles things like the async event loop for us.
 
     
     
-    @app.function(allow_concurrent_inputs=1000)
+    @app.function()
+    @modal.concurrent(max_inputs=1000)
     async def fetch_api() -> str:
         import aiohttp
     
@@ -66,7 +67,9 @@ execution. Modal handles things like the async event loop for us.
                 async with session.get(url) as response:
                     response.raise_for_status()
                     data = await response.json()
-                    message = f"# {data.get('emoji') or '🤖'} [{data['title']}]({data['source']})"
+                    message = (
+                        f"# {data.get('emoji') or '🤖'} [{data['title']}]({data['source']})"
+                    )
                     message += f"\n _{''.join(data['description'].splitlines())}_"
             except Exception as e:
                 message = f"# 🤖: Oops! {e}"
@@ -135,7 +138,8 @@ extra latency, but couples these two Functions more tightly.
 
     
     
-    @app.function(allow_concurrent_inputs=1000)
+    @app.function()
+    @modal.concurrent(max_inputs=1000)
     async def reply(app_id: str, interaction_token: str):
         message = await fetch_api.local()
         await send_to_discord({"content": message}, app_id, interaction_token)
@@ -216,8 +220,7 @@ Copy
     
         commands = response.json()
         command_exists = any(
-            command.get("name") == command_description["name"]
-            for command in commands
+            command.get("name") == command_description["name"] for command in commands
         )
     
         # and only recreate it if the force flag is set
@@ -258,9 +261,8 @@ apps on Modal, see this guide.
 
     
     
-    @app.function(
-        secrets=[discord_secret], min_containers=1, allow_concurrent_inputs=1000
-    )
+    @app.function(secrets=[discord_secret], min_containers=1)
+    @modal.concurrent(max_inputs=1000)
     @modal.asgi_app()
     def web_app():
         from fastapi import FastAPI, HTTPException, Request

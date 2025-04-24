@@ -96,9 +96,7 @@ shallow clone around 300MB.
         print("Unpacking archive...")
         prefix = "COVID-19-master/csse_covid_19_data/csse_covid_19_daily_reports"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(
-                f"unzip /tmp/covid-19.zip {prefix}/* -d {tmpdir}", shell=True
-            )
+            subprocess.run(f"unzip /tmp/covid-19.zip {prefix}/* -d {tmpdir}", shell=True)
             REPORTS_DIR.mkdir(parents=True)
             tmpdir_path = pathlib.Path(tmpdir)
             subprocess.run(f"mv {tmpdir_path / prefix}/* {REPORTS_DIR}", shell=True)
@@ -121,9 +119,7 @@ before inserting it into SQLite.
     def load_daily_reports():
         daily_reports = list(REPORTS_DIR.glob("*.csv"))
         if not daily_reports:
-            raise RuntimeError(
-                f"Could not find any daily reports in {REPORTS_DIR}."
-            )
+            raise RuntimeError(f"Could not find any daily reports in {REPORTS_DIR}.")
     
         # Preload report files to speed up sequential loading
         pool = multiprocessing.Pool(128)
@@ -149,9 +145,7 @@ before inserting it into SQLite.
                     or row.get("Province_State")
                     or None
                 )
-                country_or_region = row.get("Country_Region") or row.get(
-                    "Country/Region"
-                )
+                country_or_region = row.get("Country_Region") or row.get("Country/Region")
                 yield {
                     "day": f"{yyyy}-{mm}-{dd}",
                     "country_or_region": (
@@ -164,9 +158,7 @@ before inserting it into SQLite.
                     "deaths": int(float(row["Deaths"] or 0)),
                     "recovered": int(float(row["Recovered"] or 0)),
                     "active": int(row["Active"]) if row.get("Active") else None,
-                    "last_update": row.get("Last Update")
-                    or row.get("Last_Update")
-                    or None,
+                    "last_update": row.get("Last Update") or row.get("Last_Update") or None,
                 }
 
 Copy
@@ -258,8 +250,8 @@ lines to instantiate the `Datasette` instance and return its app server.
     @app.function(
         image=datasette_image,
         volumes={VOLUME_DIR: volume},
-        allow_concurrent_inputs=16,
     )
+    @modal.concurrent(max_inputs=16)
     @modal.asgi_app()
     def ui():
         from datasette.app import Datasette

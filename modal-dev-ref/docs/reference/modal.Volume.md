@@ -309,7 +309,7 @@ mounted as a filesystem, e.g. when running a script on your local computer.
     
     
     @live_method
-    def batch_upload(self, force: bool = False) -> "_VolumeUploadContextManager":
+    def batch_upload(self, force: bool = False) -> "_AbstractVolumeUploadContextManager":
 
 Copy
 

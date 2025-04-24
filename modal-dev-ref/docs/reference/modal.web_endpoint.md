@@ -12,7 +12,10 @@
             Iterable[str]
         ] = None,  # Create an endpoint using a custom domain fully-qualified domain name (FQDN).
         requires_proxy_auth: bool = False,  # Require Modal-Key and Modal-Secret HTTP Headers on requests.
-    ) -> Callable[[Callable[P, ReturnType]], _PartialFunction[P, ReturnType, ReturnType]]:
+    ) -> Callable[
+        [Union[_PartialFunction[P, ReturnType, ReturnType], Callable[P, ReturnType]]],
+        _PartialFunction[P, ReturnType, ReturnType],
+    ]:
 
 Copy
 

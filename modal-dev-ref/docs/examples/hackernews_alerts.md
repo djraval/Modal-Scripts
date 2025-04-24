@@ -44,11 +44,7 @@ channel name.
     
     @app.function(
         image=slack_sdk_image,
-        secrets=[
-            modal.Secret.from_name(
-                "hn-bot-slack", required_keys=["SLACK_BOT_TOKEN"]
-            )
-        ],
+        secrets=[modal.Secret.from_name("hn-bot-slack", required_keys=["SLACK_BOT_TOKEN"])],
     )
     async def post_to_slack(message: str):
         import slack_sdk

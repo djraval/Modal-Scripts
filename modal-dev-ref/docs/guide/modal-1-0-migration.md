@@ -1,6 +1,6 @@
 # Modal 1.0 migration guide
 
-We are planning to release version 1.0 of the `modal` Python SDK in Q1 of
+We are planning to release version 1.0 of the `modal` Python SDK in Q2 of
 2025. This release will signify an increased commitment to API stability and
 will imply some changes to our development workflow.
 
@@ -226,6 +226,51 @@ name substitution in your code as the semantics are otherwise identical.
 We may reintroduce a lightweight `modal.web_endpoint` without external
 dependencies in the future.
 
+## Replacing `allow_concurrent_inputs` with `@modal.concurrent`
+
+_Introduced in: v0.73.148_
+
+The `allow_concurrent_inputs` parameter is being replaced with a new
+decorator, `@modal.concurrent`. The decorator can be applied either to a
+Function or a Cls. We’re moving the input concurrency feature out of “Beta”
+status as part of this change.
+
+The new decorator exposes two distinct parameters: `max_inputs` (the limit on
+the number of inputs the Function will concurrently accept) and
+`target_inputs` (the level of concurrency targeted by the Modal autoscaler).
+The simplest migration path is to replace `allow_concurrent_inputs=N` with
+`@modal.concurrent(max_inputs=N)`:
+
+    
+    
+    # Old way, with a function (deprecated)
+    @app.function(allow_concurrent_inputs=1000)
+    def f(...):
+        ...
+    
+    # New way, with a function
+    @app.function()
+    @modal.concurrent(max_inputs=1000)
+    def f(...):
+        ...
+    
+    # Old way, with a class (deprecated)
+    @app.cls(allow_concurrent_inputs=1000)
+    class MyCls:
+        ...
+    
+    # New way, with a class
+    @app.cls()
+    @modal.concurrent(max_inputs=1000)
+    class MyCls:
+        ...
+
+Copy
+
+Setting `target_inputs` along with `max_inputs` may benefit performance by
+reducing latency during periods where the container pool is scaling up. See
+the input concurrency guide for more information.
+
 ## Deprecating the `.lookup` method on Modal objects
 
 _Introduced in: v0.72.56_
@@ -252,6 +297,72 @@ ID, or a web endpoint’s URL. In that case, you can explicitly force hydration
 of the object by calling its `.hydrate()` method. There may be other subtle
 consequences, such as errors being rasied at a different location if no object
 exists with the given name.
+
+## Removing support for custom Cls constructors
+
+_Introduced in: v0.74.0_
+
+Classes decorated with `App.cls` are no longer allowed to have a custom
+constructor (`__init__` method). Instead, class parameterization should be
+exposed using dataclass-style `modal.parameter` annotations:
+
+    
+    
+    # Old way (deprecated)
+    @app.cls()
+    class MyCls:
+        def __init__(self, name: str = "Bert"):
+            self.name = name
+    
+    # New way
+    @app.cls()
+    class MyCls:
+        name: str = modal.parameter(default="Bert")
+
+Copy
+
+Modal will provide a synthetic constructor for classes that use
+`modal.parameter`. Arguments to the synthetic constructor must be passed using
+keywords, so you may need to update your calling code as well:
+
+    
+    
+    obj = MyCls(name="Bert")  # name= is now required
+
+Copy
+
+We’re making this change to address some persistent confusion about when
+constructors execute for remote calls and what operations are allowed to run
+in them. If your custom constructor performs any setup logic beyond storing
+the parameter values, you should move it to a method decorated with
+`@modal.enter()`.
+
+Additionally, we’re reducing the types that we support as class parameters to
+a small number of primitives (`str`, `int`, `bool`, and `bytes`).
+
+Limiting class parameterization to primitive types will also allow us to
+provide better observability over parameterized class instances in the web
+dashboard, CLI, and other contexts where it is not possible to represent
+arbitrary Python objects.
+
+If you need to parameterize classes across more complex types, you can
+implement your own serialization logic, e.g. using strings as the wire format:
+
+    
+    
+    @app.cls()
+    class MyCls:
+        param_str: str = modal.parameter()
+    
+        @modal.enter()
+        def deserialize_parameters(self):
+            self.param_obj = SomeComplexType.from_str(self.param_str)
+
+Copy
+
+We recommend adopting interpretable constructor arguments (i.e., prefer
+meaningful strings over pickled bytes) so that you will be able to get the
+most benefit from future improvements to parameterized class observability.
 
 ## Simplifying Cls lookup patterns
 

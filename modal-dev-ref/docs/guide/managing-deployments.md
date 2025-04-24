@@ -37,15 +37,12 @@ Running this command on an existing deployment will redeploy the App,
 incrementing its version. For detail on how live deployed apps transition
 between versions, see the Updating deployments section.
 
-Deployments can also be created using Modal’s client library.
+Deployments can also be created programmatically using Modal’s Python API.
 
 ## Viewing deployments
 
 Deployments can be viewed either on the apps web page or by using the `modal
 app list` command.
-
-![viewing deployments in the web interface](/_app/immutable/assets/view-
-deployments.CW0MB48m.png)
 
 ## Updating deployments
 
@@ -92,7 +89,7 @@ Deployed apps can be stopped in the web UI by clicking the red “Stop app”
 button on the App’s “Overview” page, or alternatively from the command line
 using the `modal app stop` command.
 
-Stopping an App is a descructive action. Apps cannot be restarted from this
+Stopping an App is a destructive action. Apps cannot be restarted from this
 state; a new App will need to be deployed from the same source files. Objects
 associated with stopped deployments will eventually be garbage collected.
 

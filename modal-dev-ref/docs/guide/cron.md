@@ -49,9 +49,12 @@ Or programmatically:
     
     
     if __name__ == "__main__":
-        modal.runner.deploy_app(app)
+       app.deploy()
 
 Copy
+
+Now the function will run every day, at the time of the initial deployment,
+without any further interaction on your part.
 
 When you make changes to your function, just rerun the deploy command to
 overwrite the old deployment.
