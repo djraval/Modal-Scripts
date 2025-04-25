@@ -3,7 +3,9 @@
 import os
 import subprocess
 import logging
+import time  # Add time import
 import modal
+from typing import List
 
 APP_NAME = "RcloneToVolume"
 VOLUME_NAME = "rclone-volume"
@@ -26,111 +28,17 @@ image = (
 app = modal.App(name=APP_NAME, image=image)
 volume_storage = modal.Volume.from_name(VOLUME_NAME, create_if_missing=True)
 
-@app.function(
-    volumes={VOLUME_MOUNT_PATH: volume_storage},
-    timeout=24*3600,
-    cpu=2,
-    memory=256,
-    max_containers=1
-)
-def copy_with_rclone(
-    source_path: str,
-    dest_subdir: str = "",
-    rclone_config_content: str = None,
-    rclone_command: str = "sync",
-    extra_args: str = None
-):
-    """
-    Copy files using rclone to Modal volume and commit the volume.
+def setup_rclone_config(rclone_config_content: str):
+    if rclone_config_content:
+        os.makedirs(RCLONE_CONFIG_DIR, exist_ok=True)
+        config_path = os.path.join(RCLONE_CONFIG_DIR, "rclone.conf")
+        with open(config_path, "w") as f:
+            f.write(rclone_config_content)
+        logging.info(f"Rclone config set up at {config_path}")
+    else:
+        logging.error("No rclone config content provided")
 
-    Args:
-        source_path: Source path in rclone format (e.g., "onedrive:Photos")
-        dest_subdir: Subdirectory in the volume to copy files to (optional)
-        rclone_config_content: Content of rclone config file
-        rclone_command: Rclone command to use (default: "sync")
-        extra_args: Additional arguments to pass to rclone as a space-separated string (optional)
-    """
-    try:
-        if rclone_config_content:
-            os.makedirs(RCLONE_CONFIG_DIR, exist_ok=True)
-
-            config_path = os.path.join(RCLONE_CONFIG_DIR, "rclone.conf")
-            with open(config_path, "w") as f:
-                f.write(rclone_config_content)
-            logging.info(f"Rclone config set up at {config_path}")
-
-        dest_path = os.path.join(VOLUME_MOUNT_PATH, dest_subdir)
-
-        os.makedirs(dest_path, exist_ok=True)
-
-        logging.info(f"Contents of source '{source_path}':")
-        subprocess.run(["rclone", "--config", os.path.join(RCLONE_CONFIG_DIR, "rclone.conf"), "lsf", source_path], check=True)
-
-        cmd = [
-            "rclone",
-            "--config", os.path.join(RCLONE_CONFIG_DIR, "rclone.conf"),
-            rclone_command,
-            source_path,
-            dest_path,
-            "--progress",
-            "--transfers", "1",  # Process one file at a time
-            "--buffer-size", "128M",
-            "--retries", "10",
-            "--multi-thread-streams", "8",  # Use 8 threads per file
-            "--multi-thread-cutoff", "64M"  # Use multi-threading for files larger than 64M
-        ]
-
-        # Add OneDrive specific parameters if source is OneDrive
-        if source_path.startswith("onedrive:"):
-            cmd.extend([
-                "--onedrive-chunk-size", "320M"  # Must be multiple of 320k for OneDrive
-            ])
-
-        if extra_args:
-            extra_args_list = extra_args.split()
-            cmd.extend(extra_args_list)
-
-        logging.info(f"Running: {' '.join(cmd)}")
-        subprocess.run(cmd, check=True)
-
-        # Commit the volume to ensure files are persisted
-        logging.info("Committing volume...")
-        volume_storage.commit()
-        logging.info("Volume committed successfully")
-
-        return True
-
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return False
-
-@app.local_entrypoint()
-def main(
-    source_path: str = None,
-    dest_subdir: str = "",
-    rclone_config_path: str = None,
-    rclone_command: str = "sync",
-    extra_args: str = None,
-):
-    """
-    Copy files using rclone to a Modal volume.
-
-    Args:
-        source_path: Source path in rclone format (e.g., "onedrive:Photos")
-        dest_subdir: Subdirectory in the volume to copy files to (optional)
-        rclone_config_path: Path to rclone config file (optional)
-        rclone_command: Rclone command to use (default: "sync")
-        extra_args: Additional arguments to pass to rclone as a space-separated string (optional)
-    """
-    if not source_path:
-        print("Error: source_path is required")
-        return
-
-    if not rclone_config_path:
-        print("Error: rclone_config_path must be provided")
-        return
-
-    # Read the rclone config file locally
+def get_rclone_config_content(rclone_config_path: str) -> str:
     try:
         if rclone_config_path.startswith("~"):
             config_path = os.path.expanduser(rclone_config_path)
@@ -141,27 +49,189 @@ def main(
 
         if not os.path.exists(config_path):
             print(f"Error: Rclone config file not found at {config_path}")
-            return
+            return ""
 
         with open(config_path, "r") as f:
             rclone_config_content = f.read()
 
-        logging.info(f"Successfully read rclone config from {config_path}")
+        return rclone_config_content
+
     except Exception as e:
         print(f"Error reading rclone config file: {e}")
+        return ""
+
+@app.function()
+def list_remote_files(
+    remote_path: str,
+    rclone_config_content: str,
+    recursive: bool = False
+) -> List[str]:
+    try:
+        setup_rclone_config(rclone_config_content)
+        cmd = [
+            "rclone",
+            "--config", os.path.join(RCLONE_CONFIG_DIR, "rclone.conf"),
+            "lsf",
+            remote_path
+        ]
+        if recursive:
+            cmd.append("--recursive")
+
+        logging.info(f"Listing files in '{remote_path}'")
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        files = [f.strip() for f in result.stdout.splitlines() if f.strip()]
+        logging.info(f"Found {len(files)} files in '{remote_path}'")
+        return files
+
+    except Exception as e:
+        logging.error(f"Error listing files: {e}")
+        return []
+
+@app.function(
+    volumes={VOLUME_MOUNT_PATH: volume_storage},
+    timeout=24*3600,
+    cpu=2,
+    memory=256,
+    retries=3
+)
+def copy_file(
+    source_path: str,
+    dest_path: str,
+    rclone_config_content: str
+) -> bool:
+    try:
+        setup_rclone_config(rclone_config_content)
+
+        dest_dir = os.path.dirname(dest_path)
+        os.makedirs(dest_dir, exist_ok=True)
+
+        # Build the rclone command
+        cmd = [
+            "rclone",
+            "--config", os.path.join(RCLONE_CONFIG_DIR, "rclone.conf"),
+            "copyto",
+            source_path,
+            dest_path,
+            # "--progress",
+            "--buffer-size", "128M",
+            "--retries", "10",
+            "--multi-thread-streams", "8",
+            "--multi-thread-cutoff", "64M"
+        ]
+
+        logging.info(f"Copying file from '{source_path}' to '{dest_path}'")
+        # Capture rclone output
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logging.debug(f"Rclone stdout: {result.stdout}")
+        if result.stderr:
+             logging.warning(f"Rclone stderr: {result.stderr}") # Log stderr as warning
+        logging.info(f"File copied successfully")
+
+        # Commit the volume after successful copy
+        volume_storage.commit()
+        logging.info(f"Volume committed after copying {os.path.basename(source_path)}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Error copying file: {e}")
+        return False
+
+@app.local_entrypoint()
+def main(
+    source_path: str = None,
+    dest_subdir: str = None,
+    rclone_config_path: str = None
+):
+    if not all([source_path, dest_subdir, rclone_config_path]):
+        print("Error: source_path, dest_subdir, and rclone_config_path are all required")
         return
 
-    logging.info(f"Starting {rclone_command} from '{source_path}' to volume subdirectory '{dest_subdir}'")
+    logging.info(f"Starting file copy process from '{source_path}' to volume subdirectory '{dest_subdir}'")
+    start_time = time.monotonic()  # Record start time
+    rclone_config_content = get_rclone_config_content(rclone_config_path)
 
-    success = copy_with_rclone.remote(
-        source_path=source_path,
-        dest_subdir=dest_subdir,
-        rclone_config_content=rclone_config_content,
-        rclone_command=rclone_command,
-        extra_args=extra_args
-    )
+    if not rclone_config_content:
+        logging.error("Failed to read rclone configuration file")
+        return
 
-    if success:
-        logging.info("Operation completed successfully")
+    files = list_remote_files.remote(source_path, rclone_config_content)
+    logging.info(f"Found {len(files)} files to process")
+    logging.debug(f"Files listed: {files}")
+
+    if not files:
+        logging.warning(f"No files found in '{source_path}'")
+        return
+
+    dest_path = f"{VOLUME_MOUNT_PATH}/{dest_subdir}".replace('\\', '/')
+    logging.debug(f"Base destination path set to: {dest_path}")
+
+    # Process each file individually using copy_file.spawn() for parallel execution
+    function_calls = []
+    for file_name in files:
+        file_source_path = f"{source_path}/{file_name}"
+        file_dest_path = f"{dest_path}/{file_name}"
+
+        logging.debug(f"  Preparing copy: source='{file_source_path}', dest='{file_dest_path}'")
+
+        # Spawn a copy_file job for each file (runs in parallel)
+        call = copy_file.spawn(
+            source_path=file_source_path,
+            dest_path=file_dest_path,
+            rclone_config_content=rclone_config_content
+        )
+        logging.debug(f"[SPAWNED] Job {len(function_calls)+1} for file: {file_name}")
+        function_calls.append((file_name, call))
+
+    # Wait for all jobs to complete and collect results
+    logging.info("-" * 60)
+    logging.info(f"SPAWNED {len(function_calls)} COPY JOBS - WAITING FOR COMPLETION")
+    logging.info("-" * 60)
+
+    # Track job status
+    completed = 0
+    failed = 0
+    pending = len(function_calls)
+
+    # Process results with timeout handling
+    for file_name, call in function_calls:
+        try:
+            success = call.get()
+            if success:
+                logging.info(f"[SUCCESS] Copied file: {file_name}")
+                completed += 1
+            else:
+                logging.error(f"[FAILED] Could not copy file: {file_name}")
+                failed += 1
+
+        except TimeoutError:
+            logging.error(f"[TIMEOUT] Waiting for file: {file_name}")
+            failed += 1
+        except Exception as e:
+            logging.error(f"[ERROR] Processing file {file_name}: {e}")
+            failed += 1
+
+    # Log summary
+    end_time = time.monotonic()  # Record end time
+    duration = end_time - start_time
+    pending = len(function_calls) - (completed + failed)
+
+    # Print a clear summary table
+    logging.info("-" * 60)
+    logging.info(f"SUMMARY OF FILE TRANSFER OPERATIONS:")
+    logging.info(f"  Total files:     {len(function_calls)}")
+    logging.info(f"  Successful:      {completed}")
+    logging.info(f"  Failed:          {failed}")
+    logging.info(f"  Pending:         {pending}")
+    logging.info(f"  Total time:      {duration:.2f} seconds") # Log duration
+    logging.info("-" * 60)
+
+    if failed == 0 and pending == 0:
+        logging.info("All files processed successfully")
     else:
-        logging.error("Operation failed")
+        logging.error("Some files failed to copy, are still pending, or volume commit failed")
